@@ -19,5 +19,360 @@
   Sean made a change
 </p>
 
+<!-- #region 
+
+def find_missing_values_NAN(df):
+
+    '''
+        This function finds out missing values (as NAN) in between valid non-NAN values
+    '''
+    
+    print("Missing values as NAN : \n")
+    
+    found=False
+    for i in range(1, len(df) - 1):  # Exclude first and last row
+        for j in range(1, len(df.columns) - 1):  # Exclude first and last column
+            if pd.isna(df.iloc[i, j]) and not pd.isna(df.iloc[i-1, j]) and not pd.isna(df.iloc[i+1, j]):
+                print(f"NaN value surrounded by non-NaN values at (row {i}, column {j})\n")
+                print(df.iloc[i-2:i+2,j])
+                found=True
+                break
+            if found:
+                break
+                
+def find_missing_values_zero(df):
+    
+    '''
+        This function finds out missing values (as 0) in between valid non-NAN values
+    '''
+    
+    print("Missing values as 0 : \n")
+    
+    found=False
+    for i in range(1, len(df) - 1):  # Exclude first and last row
+        for j in range(1, len(df.columns) - 1):  # Exclude first and last column
+            if df.iloc[i, j] == 0 and df.iloc[i-1, j] != 0 and df.iloc[i+1, j] != 0:
+                print(f"zero value surrounded by non-zero values at (row {i}, column {j})\n")
+                print(df.iloc[i-2:i+2,j])
+                found=True
+                break
+            if found:
+                break
+
+def find_inf_values(df):
+    
+    '''
+        This function find inf values in the data
+    '''
+    
+    print("Check for inf values : \n")
+    
+    found=False
+    for i in range(1, len(df) - 1):  # Exclude first and last row
+        for j in range(1, len(df.columns) - 1):  # Exclude first and last column
+            if np.isinf(df.iloc[i, j]) and not np.isinf(df.iloc[i-1, j]) and not np.isinf(df.iloc[i+1, j]):
+                print(f"inf value surrounded by non-inf values at (row {i}, column {j})\n")
+                print(df.iloc[i-2:i+2,j])
+                found=True
+                break
+            if found:
+                break
+                
+def find_non_NAN_rows(df):
+    non_nan_rows = df[df.apply(lambda row: row.notna().any(), axis=1)]
+    print(non_nan_rows.head(10))
+
+def plot_histogram_whole_data(df, range_boundary):
+
+    fig, ax = plt.subplots()  # Create a new figure and axes for each plot
+    
+    
+    df = df.stack()
+    df = df.reset_index(drop=True)
+    df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df.dropna(axis=0, how='any', inplace=True)
+    #splt.hist(df,bins=20)
+    #plt.hist(df, bins=20, range=(-1*range_boundary, range_boundary))
+    
+    ax.hist(df, bins=20, range=(-1 * range_boundary, range_boundary))
+    
+# cross-section plotting
+def plot_cs(df, row_index, x_title, bins=20):
+    
+    fig, ax = plt.subplots()  # Create a new figure and axes for each plot
+    
+    df = df.iloc[row_index, :]
+    #plt.hist(df, bins=20)  
+    ax.hist(df, bins=20)
+    plt.xlabel(x_title)
+    plt.ylabel('Frequency')
+    plt.title('Cross-Sectional Plot : Histogram of '+str(x_title))
+    plt.show();
+
+# time series plottimg
+def plot_ts(df, column_index, y_title):
+
+    
+    #if remove_nan:
+    #    df = df.iloc[:,column_index].dropna()
+   
+    plt.plot(df.index, df.iloc[:, column_index])
+    plt.xlabel('Date')
+    plt.ylabel(y_title)
+    plt.title('Time Series Plot : '+str(y_title)+' for Column {}'.format(column_index))
+    plt.show();
+
+def plot_ts_df1_vs_df2(df1, df2, column_index):
+    """
+    Plot time series for two given dataframes for a specified column.
+    
+    Parameters:
+    df1 (DataFrame): DataFrame containing first set of data with dates as index.
+    df2 (DataFrame): DataFrame containing second set of data with dates as index.
+    column_index (int or str): Column representing the stock in both DataFrames.
+    
+    Returns:
+    None: Displays the plot.
+    """
+    
+    # Convert column_index to string to match DataFrame's column type
+    column_index = str(column_index)
+    
+    # Get DataFrame names for labels
+    df1_name = df1.name if hasattr(df1, 'name') else 'df1'
+    df2_name = df2.name if hasattr(df2, 'name') else 'df2'
+    
+    fig, ax1 = plt.subplots(figsize=(15, 8))
+    
+    # Plot data from df1
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel(df1_name, color='tab:blue')
+    ax1.plot(df1.index, df1[column_index], color='tab:blue', label=df1_name)
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    
+    # Create a secondary y-axis to plot data from df2
+    ax2 = ax1.twinx()
+    ax2.set_ylabel(df2_name, color='tab:red')
+    ax2.plot(df2.index, df2[column_index], color='tab:red', label=df2_name)
+    ax2.tick_params(axis='y', labelcolor='tab:red')
+    
+    # Show legend and grid
+    ax1.legend(loc='upper left')
+    ax2.legend(loc='upper right')
+    ax1.grid(True)
+    
+    plt.title(f'Time Series for {df1_name} and {df2_name} for Column {column_index}')
+    plt.show()
+
+    
+    
+def plot_ts_random(df, n=4):
+    """
+    Plot n random time series columns from a given DataFrame df as subplots in a 2x(n/2) table format.
+    
+    Parameters:
+    df (DataFrame): DataFrame containing the time series data.
+    n (int): Number of random columns to plot. Default is 4, should be an even number.
+    
+    Returns:
+    None: Displays the subplots.
+    """
+    
+    # Ensure n is an even number for 2x(n/2) table format
+    if n % 2 != 0:
+        n = int(n/2)*2
+    
+    # Get DataFrame name for labeling purposes
+    df_name = df.name if hasattr(df, 'name') else 'DataFrame'
+    
+    # Select n random columns from the DataFrame
+    random_columns = random.sample(list(df.columns), n)
+    
+    # Create subplots in 2x(n/2) table format
+    fig, axs = plt.subplots(int(n/2), 2, figsize=(15, 4 * int(n/2)))
+    
+    for i, column in enumerate(random_columns):
+        row = i // 2
+        col = i % 2
+        axs[row, col].plot(df.index, df[column])
+        axs[row, col].set_xlabel('Date')
+        axs[row, col].set_ylabel(df_name)
+        axs[row, col].set_title(f'Column {column}')
+    
+    plt.tight_layout()
+    plt.show()
+    
+'''
+# display histogram of % of non-NAN values for each column
+def plot_data_completeness(df):
+    
+    non_nan_percentage = df.notna().mean() * 100
+    plt.figure(figsize=(10, 6))
+    
+    plt.hist(non_nan_percentage, bins=50, edgecolor='black')
+    plt.title('Histogram of Percentage of Non-NaN Entries Per Column')
+    plt.xlabel('Percentage of Non-NaN Entries')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.show()
+    return non_nan_percentage
+'''
+
+# display histogram of % of non-NAN values for each column
+# trim_leading_NANs True means you compute the calculation after removing leading NANs
+def plot_data_completeness(df, trim_leading_NANs=False):
+    if trim_leading_NANs:
+        # Initialize an empty dictionary to store the non-NaN percentages after trimming leading NaNs
+        non_nan_percentage = {}
+        for col in df.columns:
+            # Drop leading NaNs
+            trimmed_series = df[col].dropna()
+            if len(trimmed_series) > 0:
+                first_valid_index = df[col].first_valid_index()
+                trimmed_series = df.loc[first_valid_index:, col]
+                non_nan_percent = (trimmed_series.count() / len(trimmed_series)) * 100
+            else:
+                non_nan_percent = 0.0
+            non_nan_percentage[col] = non_nan_percent
+        non_nan_percentage = pd.Series(non_nan_percentage)
+    else:
+        non_nan_percentage = df.notna().mean() * 100
+    
+    plt.figure(figsize=(10, 6))
+    plt.hist(non_nan_percentage, bins=50, edgecolor='black')
+    plt.title('Histogram of Percentage of Non-NaN Entries Per Column')
+    plt.xlabel('Percentage of Non-NaN Entries')
+    plt.ylabel('Frequency')
+    plt.grid(True)
+    plt.show()
+    
+    return non_nan_percentage
+
+def normalize(df):
+    df = df.sub(df.mean(axis=1), axis=0)
+    df = df.div(df.abs().sum(axis=1), axis=0)
+    return df
+    
+def neutralize(df):
+    df = df.sub(df.mean(axis=1), axis=0)
+    return df
+
+##def neutralized_with_sector(df):
+    ### IMPLEMENT? ?
+    
+def rank(df):
+    df = df.apply(lambda row: row.rank(), axis=1)
+    df = df.div(df.sum(axis=1), axis=0)
+    return df
+
+def ts_rank(df, n):
+    #df = df.squeeze()
+    # rolling applies to series
+    df = df.rolling(window=n).apply(rank)
+      
+def group_mean(df, group):
+
+    '''
+    Returns data with average value of returns based on sector for each day and stock
+    '''
+    # The function uses 2 dictionaries; 1st to get sectors from sector data as keys and mean of returns for each sector for a day as values
+    # 2nd dict contains date as keys and 1st dictionary as value for correcsponding date
+    # here function uses Transpose of data to convert dates in columns 
+    # as a last step function replaces sectors in sector data with mean values for each column and again applies Transpose to get original form
+
+    keys = []
+    values = []
+    for col in group.T.columns:
+        daywise_df = pd.DataFrame({'sector':group.T[col],'returns':df.T[col]}) # data of sector info and stocks' returns on particular day
+        dict_sector_mean = dict(daywise_df.groupby('sector')['returns'].mean()) # dict of sector with corresponding mean value for a particular day
+        values.append(dict_sector_mean)
+        keys.append(col)
+    return group.T.replace(dict(zip(keys,values))).T # Replace sector with corresponding means
+    
+def neutralize_to_group(df, group):
+    df = df.sub(group_mean(df, group))
+    return df
+
+def replace_outliers_with_nan(df):
+    '''
+        This function replaces values which are higher than 99th percentile or below than 1 percentile by NAN
+    '''
+    q99 = df.quantile(0.99)
+    q1 = df.quantile(0.01)
+    
+    df[df > q99] = np.nan
+    df[df < q1] = np.nan
+    
+    return df
+
+def calculate_cvar(returns, alpha=0.05):
+    """
+    Calculate the Conditional Value-at-Risk (CVaR) of a series of returns.
+    
+    Parameters:
+    - returns (numpy.array): Array of returns
+    - alpha (float): Significance level, default is 0.05
+    
+    Returns:
+    - float: CVaR value
+    """
+    # Sort the returns
+    sorted_returns = np.sort(returns)
+    
+    # Calculate the index corresponding to the alpha quantile
+    index = int(alpha * len(sorted_returns))
+    
+    # Calculate CVaR
+    cvar = np.mean(sorted_returns[:index])
+    
+    return cvar
+
+Kalman filter smoothening :
+
+def kalman_filter_smoothing_df(df, observation_covariance, transition_covariance):
+    n_rows, n_cols = df.shape
+    smoothed_df = pd.DataFrame(index=df.index, columns=df.columns)
+
+    for col in df.columns:
+        series = df[col]
+        initial_state = series.dropna().iloc[0] if not series.dropna().empty else 0
+        state = initial_state
+        state_covariance = 1.0
+        filtered_state_means = np.zeros(n_rows)
+
+        for t in range(n_rows):
+            # Prediction Step
+            predicted_state = state
+            predicted_state_covariance = state_covariance + transition_covariance
+
+            # Update Step
+            observation = series.iloc[t] if not np.isnan(series.iloc[t]) else predicted_state  # Use prediction if observation is NaN
+            kalman_gain = predicted_state_covariance / (predicted_state_covariance + observation_covariance)
+            state = predicted_state + kalman_gain * (observation - predicted_state)
+            state_covariance = (1 - kalman_gain) * predicted_state_covariance
+
+            filtered_state_means[t] = state
+
+        smoothed_df[col] = filtered_state_means
+
+    return smoothed_df
+
+# Testing the adapted function on the first two columns of the data
+observation_covariance_test = 0.5
+transition_covariance_test = 0.05
+smoothed_data_test = kalman_filter_smoothing_df(cp.iloc[:, :7], observation_covariance_test, transition_covariance_test)
+print(smoothed_data_test.head(5))
+
+# plot 7th column
+plt.figure(figsize=(14, 6))
+plt.plot(cp.iloc[:,6], label=f'Original', color='blue', linewidth=2)
+plt.plot(smoothed_data_test.iloc[:,6], label=f'Kalman Smoothed (ObsCov={observation_covariance}, TransCov={transition_covariance})', color='green', linewidth=2)            
+plt.title(f'Stock Price: Kalman Filter vs Original')
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+-->
+
 </body>
 </html>
