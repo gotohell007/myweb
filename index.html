@@ -21,6 +21,44 @@
 
 <!-- #region 
 
+def group_mean(df, group, include_itself=True):
+    """
+    Calculates the mean of all values in the group of a particular stock.
+
+    :param df: DataFrame containing stock prices, with dates as rows and stocks as columns.
+    :param group: DataFrame containing industry IDs for each stock, with same structure as df.
+    :param include_itself: If True, include the stock's own value in mean calculation. If False, exclude it.
+    :return: DataFrame of group means for each stock.
+    """
+    # Check if df and group have the same structure
+    if df.shape != group.shape or (df.index != group.index).any() or (df.columns != group.columns).any():
+        raise ValueError("df and group must have the same shape, indices, and columns")
+
+    # Create a copy of df for modification
+    group_means = df.copy()
+
+    # Iterate over each date and stock
+    for date in df.index:
+        for stock in df.columns:
+            group_id = group.at[date, stock]
+            group_values = df.loc[date][group.loc[date] == group_id]
+
+            if not include_itself:
+                group_values = group_values[group_values.index != stock]
+
+            group_mean_value = group_values.mean()
+            group_means.at[date, stock] = group_mean_value
+
+    return group_means
+
+# Testing the group_mean function with the same example data
+group_means_included = group_mean(df_example, group_example, include_itself=True)
+group_means_excluded = group_mean(df_example, group_example, include_itself=False)
+
+group_means_included, group_means_excluded
+
+
+
 def neutralize(df, group):
     """
     Neutralizes each value in 'df' by subtracting the mean of all stocks in the same 'group'.
