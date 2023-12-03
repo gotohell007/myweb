@@ -58,6 +58,28 @@ group_means_excluded = group_mean(df_example, group_example, include_itself=Fals
 group_means_included, group_means_excluded
 
 
+def neutralize(df, group, include_itself=True):
+    """
+    Neutralizes each value in 'df' by subtracting the mean of all stocks in the same 'group'.
+
+    :param df: DataFrame containing stock prices, with dates as rows and stocks as columns.
+    :param group: DataFrame containing industry IDs for each stock, with same structure as df.
+    :param include_itself: If True, include the stock's own value in mean calculation. If False, exclude it.
+    :return: Neutralized DataFrame.
+    """
+    # First, calculate the group means
+    group_means = group_mean(df, group, include_itself)
+
+    # Neutralize by subtracting the group mean from each stock's value
+    neutralized_df = df.sub(group_means)
+
+    return neutralized_df
+
+# Testing the neutralize function with the same example data
+neutralized_df_included = neutralize(df_example, group_example, include_itself=True)
+neutralized_df_excluded = neutralize(df_example, group_example, include_itself=False)
+
+neutralized_df_included, neutralized_df_excluded
 
 def neutralize(df, group):
     """
