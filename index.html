@@ -21,6 +21,21 @@
 
 <!-- #region 
 
+def neutralize(df, group):
+    """
+    Neutralizes each value in 'df' by subtracting the mean of all stocks in the same 'group'.
+
+    :param df: DataFrame containing stock prices, with dates as rows and stocks as columns.
+    :param group: DataFrame containing industry IDs for each stock, with same structure as df.
+    :return: Neutralized DataFrame.
+    """
+    # Ensuring the indices and columns of df and group match
+    if df.shape != group.shape or (df.index != group.index).any() or (df.columns != group.columns).any():
+        raise ValueError("df and group must have the same shape, indices, and columns")
+
+    # Applying the neutralization
+    return df.sub(df.groupby(group).transform('mean'))
+  
 def find_missing_values_NAN(df):
 
     '''
