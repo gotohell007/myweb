@@ -447,6 +447,21 @@ plt.xlabel('Date')
 plt.ylabel('Price')
 plt.legend()
 plt.show()
+
+import matplotlib.pyplot as plt
+
+def plot_series_histogram(series):
+    """
+    Plots the histogram of a pandas Series.
+
+    :param series: Pandas Series to be plotted.
+    """
+    # Plotting the histogram
+    plt.hist(series, bins='auto', color='blue', alpha=0.7)
+    plt.title('Histogram of Series')
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+    plt.show()
 -->
 
 </body>
