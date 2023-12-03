@@ -21,6 +21,32 @@
 
 <!-- #region 
 
+def truncate_new(df, fraction):
+    """
+    Truncates each value in a DataFrame based on a specified fraction of the absolute sum of values in that row.
+
+    :param df: DataFrame to be truncated.
+    :param fraction: The fraction of the total absolute sum to limit each value to.
+    :return: Truncated DataFrame.
+    """
+    # Calculate the total absolute sum per row
+    total_abs_sum = df.abs().sum(axis=1)
+
+    # Apply conditional truncation
+    truncated_df = df.apply(lambda row: np.where(row > fraction * total_abs_sum[row.name], 
+                                                 fraction * total_abs_sum[row.name], 
+                                                 np.where(row < -fraction * total_abs_sum[row.name], 
+                                                          -fraction * total_abs_sum[row.name], 
+                                                          row)), axis=1)
+
+    return pd.DataFrame(truncated_df.tolist(), index=df.index, columns=df.columns)
+
+# Applying the new truncate function to the example DataFrame
+truncated_df_new = truncate_new(df_example, 0.02)
+truncated_df_new
+
+
+  
 def group_mean(df, group, include_itself=True):
     """
     Calculates the mean of all values in the group of a particular stock.
