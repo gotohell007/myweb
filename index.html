@@ -21,6 +21,62 @@
 
 <!-- #region 
 
+  # ALSO set all exact 0 to NAN,
+def neutralize(df, group, include_itself=True):
+    """
+    Neutralizes each value in 'df' by subtracting the mean of its respective group as defined in 'group'.
+    If include_itself is True, includes the stock's own value in the mean calculation. If False, excludes it.
+
+    :param df: DataFrame containing stock prices, with dates as rows and stocks as columns.
+    :param group: Series containing group IDs for each stock.
+    :param include_itself: Boolean indicating whether to include the stock's own value in the mean calculation.
+    :return: Neutralized DataFrame.
+    """
+    # Ensure the group series is aligned with the columns of df
+    group = group.reindex(df.columns)
+
+    if include_itself:
+        # Calculate group means for each date including the stock itself
+        group_means = df.groupby(group, axis=1).transform('mean')
+    else:
+        # Calculate group means for each date excluding the stock itself
+        group_means = (df.groupby(group, axis=1).transform('sum') - df) / (df.groupby(group, axis=1).transform('count') - 1)
+
+    # Subtract the group mean from each stock's value
+    neutralized_df = df.sub(group_means)
+
+    return neutralized_df
+
+# Example usage:
+# Assuming df is your DataFrame of stock prices and group is the Series of group IDs
+# neutralized_df_included = neutralize(df, group, include_itself=True)
+# neutralized_df_excluded = neutralize(df, group, include_itself=False)
+# print(neutralized_df_included)
+# print(neutralized_df_excluded)
+
+
+  
+  # eutralizes group which is a series adn df is proper
+def neutralize(df, group):
+    """
+    Neutralizes each value in 'df' by subtracting the mean of its respective group as defined in 'group'.
+
+    :param df: DataFrame containing stock prices, with dates as rows and stocks as columns.
+    :param group: Series containing group IDs for each stock.
+    :return: Neutralized DataFrame.
+    """
+    # Ensure the group series is aligned with the columns of df
+    group = group.reindex(df.columns)
+
+    # Calculate group means for each date
+    group_means = df.groupby(group, axis=1).transform('mean')
+
+    # Subtract the group mean from each stock's value
+    neutralized_df = df.sub(group_means)
+
+    return neutralized_df
+
+  
 def truncate_new(df, fraction):
     """
     Truncates each value in a DataFrame based on a specified fraction of the absolute sum of values in that row.
