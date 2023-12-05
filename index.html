@@ -21,6 +21,143 @@
 
 <!-- #region 
 
+## SIMULATOR VISUALISATION  : https://github.com/ranaroussi/quantstats
+#%pip install quantstats
+
+import quantstats as qs
+
+# extend pandas functionality with metrics, etc.
+qs.extend_pandas()
+
+# fetch the daily returns for a stock
+#port = qs.utils.download_returns('META')
+initial_capital = 1e6
+stock = pnl['PnL']/initial_capital * 100.0 # stock is extended to be returns stream 
+
+# show sharpe ratio
+
+qs.plots.snapshot(stock, title='PnL Performance', show=True)
+
+qs.reports.html(stock, "SPY")
+
+print(stock.sharpe())
+print(stock.max_drawdown())
+print(stock.win_rate())
+print(stock.avg_win())
+print(stock.avg_loss())
+print(stock.kelly_criterion())
+
+GENERATE MOCK DATA :
+  dates = pd.date_range('2020-01-01', '2020-01-10')
+alpha_data = pd.DataFrame(np.random.randn(10, 3), index=dates, columns=['A', 'B', 'C'])
+ret_data = pd.DataFrame(np.random.randn(10, 3)/100, index=dates, columns=['A', 'B', 'C'])  # returns in percentage
+
+  ANOTHER WAY GENERATE MOCK DATA :
+  # Set random seed for reproducibility
+np.random.seed(42)
+# Generate a DataFrame with 1000 rows (dates) and 20 columns (stocks)
+n_dates = 1000
+n_stocks = 50
+# Generate random dates
+date_rng = pd.date_range(start='1/1/2010', periods=n_dates, freq='D')
+# Generate random percentage returns
+random_returns = np.random.rand(n_dates, n_stocks) * 0.02 - 0.01
+# Create stock names
+stock_names = [f'Stock_{i+1}' for i in range(n_stocks)]
+# Create the DataFrame
+df_returns_random = pd.DataFrame(random_returns, index=date_rng, columns=stock_names)
+  
+  
+## PLOT RANDOM X STOCKS :
+
+  num_random_indices = 10
+random_indices = np.random.choice(cp_clean.columns, num_random_indices)
+print(random_indices)
+
+# Iterate through the randomly generated column indices
+for col_idx in random_indices:
+    df_temp = pd.DataFrame()
+    df_temp['Close'] = cp_clean.iloc[-100:,int(col_idx)]
+    df_temp['Max_fall'] = max_fall_from_last_high(df_temp['Close'])
+    #print(df_temp)
+    plot_dual_axis(df_temp['Close'], df_temp['Max_fall'])
+
+
+def winsorize(data, z):
+    """
+    Clips values in a DataFrame or Series to within 'z' standard deviations of the mean.
+
+    :param data: DataFrame or Series to be winsorized.
+    :param z: Number of standard deviations to use for clipping.
+    :return: Winsorized DataFrame or Series.
+    """
+    if isinstance(data, pd.DataFrame):
+        # Calculate mean and standard deviation for each column
+        mean = data.mean()
+        std = data.std()
+
+        # Define clipping bounds
+        lower_bound = mean - z * std
+        upper_bound = mean + z * std
+
+        # Apply clipping
+        winsorized_data = data.clip(lower=lower_bound, upper=upper_bound, axis=1)
+
+    elif isinstance(data, pd.Series):
+        # Calculate mean and standard deviation
+        mean = data.mean()
+        std = data.std()
+
+        # Define clipping bounds
+        lower_bound = mean - z * std
+        upper_bound = mean + z * std
+
+        # Apply clipping
+        winsorized_data = data.clip(lower=lower_bound, upper=upper_bound)
+
+    else:
+        raise TypeError("Input data must be a pandas DataFrame or Series")
+
+    return winsorized_data
+
+# Example usage:
+# For a DataFrame 'df'
+# winsorized_df = winsorize(df, z=2)
+
+# For a Series 'series'
+# winsorized_series = winsorize(series, z=2)
+
+def neutralize(df, group, include_itself=True, min_group_size=2):
+    """
+    Neutralizes each value in 'df' by subtracting the mean of its respective group as defined in 'group'.
+    Groups with fewer than min_group_size stocks are excluded from the neutralization process.
+
+    :param df: DataFrame containing stock prices, with dates as rows and stocks as columns.
+    :param group: Series containing group IDs for each stock.
+    :param include_itself: Boolean indicating whether to include the stock's own value in the mean calculation.
+    :param min_group_size: Minimum number of stocks in a group to be included in neutralization.
+    :return: Neutralized DataFrame.
+    """
+    # Ensure the group series is aligned with the columns of df
+    group = group.reindex(df.columns)
+
+    # Count the number of stocks in each group
+    group_counts = df.groupby(group, axis=1).count()
+
+    # Calculate group means with the specified method
+    if include_itself:
+        group_means = df.groupby(group, axis=1).transform('mean')
+    else:
+        group_means = (df.groupby(group, axis=1).transform('sum') - df) / (df.groupby(group, axis=1).transform('count') - 1)
+
+    # Apply neutralization only to groups with a sufficient number of stocks
+    neutralized_df = df.sub(group_means).where(group_counts >= min_group_size, df)
+
+    return neutralized_df
+
+# Example usage:
+# neutralized_df = neutralize(df, group, include_itself=True, min_group_size=2)
+  
   # ALSO set all exact 0 to NAN,
 def neutralize(df, group, include_itself=True):
     """
@@ -54,6 +191,69 @@ def neutralize(df, group, include_itself=True):
 # print(neutralized_df_included)
 # print(neutralized_df_excluded)
 
+
+## ANALYZING TURNOVER :
+  ## ANALYZING ALPHA : TURNOVER
+
+from scipy.stats import linregress
+
+def calculate_turnover(alpha):
+    alpha_df = pd.DataFrame(alpha)
+    turnover = alpha_df.diff().abs().sum(axis=1) / 2
+    return turnover
+
+alpha = np.random.rand(*ret1_d1.shape)
+alpha = alpha / alpha.sum(axis=1)[:, np.newaxis]
+
+returns_alpha = np.sum(alpha * ret1_d1.fillna(0).values, axis=1)
+returns_series = pd.Series(returns_alpha)
+
+## ANALYZING TURNOVER :
+# 1. Correlate Turnover with Returns: Check if higher turnover periods are associated with higher returns. If not, the high turnover might just be noise. In this case, can use smoothing or regularization or longer holding periods or batch trading(aggregate trades first)
+# 2. Transaction Costs: High turnover means higher transaction costs. Make sure that the extra returns you're getting are not being eaten up by these costs.
+# 3. Consistency: If the alpha is consistently profitable but has high turnover, you might be able to reduce the turnover without sacrificing profitability by applying some form of regularization or smoothing to your alpha construction logic.
+# 4. Review Alpha Factors: Carefully review the alpha factors you're using. Are they all contributing positively to your returns? Removing unnecessary factors can reduce turnover. 
+
+turnover = calculate_turnover(alpha)
+correlation_with_returns = turnover.corr(returns_series)
+
+
+## FUNCTIONS 
+
+  def ts_max(df, window):
+    df = df.rolling(window).max()
+    return df
+    
+def ts_arg_max(df, window):
+    ## this function calculates the index of the max value in the rolling window, this index is the actual index in the dataframe
+    def idx_max(x):
+        dict_values = [x.shift(i) for i in range(window)]
+        df_shift = pd.DataFrame(dict(zip(range(window),dict_values))).fillna(0)
+        return x.index[np.arange(len(x)) - df_shift.idxmax(1)]
+    return df.apply(lambda x: idx_max(x))
+    
+def group_rank(df, group):
+    ## implement this function, this function will apply a custom function, 'rank' in this case(.apply() above rank function) , group-wise where group is sector here. So instead of applying rank to whole row, it will only rank the stock among it's sector stocks
+    df_merge = pd.merge(df.T, group.replace(np.nan,'NAN').T, right_index = True, left_index = True)
+    df = df.apply(lambda x: df_merge.groupby(x.name+'_y',)[x.name+'_x'].rank(), axis = 1)
+    return df
+    
+def bucket_rank(df, n_bucket):
+    ## implement this function , 
+    ## this takes in a df_bucket dataframe
+    ##    For the df_bucket, first convert each row to uniform values between [0,1] using min-max scaling ie (value - min(value across the row))/(max-min)
+    ##    Now divide the ranged bucket values to n_bucket, eg : if n_bucket=5, then df_bucket=0-0.2 will be bucket1, 0.2-0.4 will be bucket2 and so on...
+    ##    Now we have bucket number for each stock for each dasy just like sector, this is the new classification
+    
+    ## Now apply rank to this new group 'bucket' , apply rank like a customized functionreturn because I would like to change it to other functions like neutralizeation etc as well
+    ## Make the code easy to understand and extendible by me
+    
+    groups = [f'bucket{i}' for i in range(1, n_bucket+1)]
+    edges = np.linspace(0,1,num = n_bucket+1)
+    df_group = df.apply(lambda row: pd.cut((row - row.min())/(row.max()-row.min()), bins = edges, labels = groups, duplicates='drop').astype('O')) 
+    return group_rank(df,df_group)
+
+  
 
   
   # eutralizes group which is a series adn df is proper
