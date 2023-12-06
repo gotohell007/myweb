@@ -21,6 +21,34 @@
 
 <!-- #region 
 
+def ts_arg_max(df, n_days):
+    """
+    Calculates the number of days since the maximum value in a rolling window of n_days for each column in a DataFrame.
+
+    :param df: DataFrame containing data, with dates as rows and column identifiers.
+    :param n_days: Number of days to consider for the rolling window.
+    :return: DataFrame with the number of days since the maximum value in each rolling window.
+    """
+    def days_since_max(column):
+        # Reverse the column for rolling to work from past to present
+        reversed_col = column.iloc[::-1]
+        # Rolling window applied
+        return reversed_col.rolling(window=n_days, min_periods=1).apply(lambda x: x.argmax())
+
+    return df.apply(days_since_max)
+
+# Creating a sample DataFrame for testing the ts_arg_max function
+sample_data_5 = {
+    'Stock1': [10, 12, 14, 15, 14, 13, 12, 11, 10, 9],
+    'Stock2': [20, 19, 18, 17, 18, 19, 20, 21, 22, 23],
+    'Stock3': [30, 31, 30, 29, 28, 27, 28, 29, 30, 31]
+}
+sample_df_5 = pd.DataFrame(sample_data_5, index=pd.date_range(start='2021-05-01', periods=10, freq='D'))
+
+# Applying the function to the sample DataFrame with n_days = 3
+ts_arg_max_df = ts_arg_max(sample_df_5, n_days=3)
+ts_arg_max_df
+  
 ## SIMULATOR VISUALISATION  : https://github.com/ranaroussi/quantstats
 #%pip install quantstats
 
