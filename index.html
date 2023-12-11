@@ -21,6 +21,89 @@
 
 <!-- #region 
 
+
+'''
+NOTE :
+How to Decide the Inputs : 
+Initial State: Often set to the first observation in the time series.
+Observation Covariance: Can be estimated as the variance of the changes in stock price. Smaller values make the filter more sensitive to changes.
+Transition Covariance: Usually a small value to indicate that stock prices don't change drastically in a short time. Larger values will make the filter smoother.
+
+Observations:
+Sensitivity to Observation Covariance (SMALLER VALUE MAKE DECAY FASTER): A smaller value of Observation Covariance (e.g., 0.5) makes the Kalman Filter more sensitive to price changes, resulting in a line that more closely follows the original data.
+Sensitivity to Transition Covariance (SMALLER VALUE MAY DECAY SMOOTHER): A larger value of Transition Covariance (e.g., 0.2) makes the Kalman Filter smoother, resulting in a line that is less sensitive to price changes.
+Trade-offs: There is a trade-off between responsiveness and smoothness, governed by these parameters. High sensitivity might capture more legitimate fluctuations but can also capture noise. A smoother line might miss quick, legitimate fluctuations.
+
+'''
+//// USING eval :
+
+  # https://stackoverflow.com/questions/33646365/python-programming-how-to-eval-values-from-dictionary
+# https://realpython.com/courses/evaluate-expressions-dynamically-python-eval/
+
+from myfunctions import rank # from myfunctions import rank, mult
+
+#def rank(n):
+#    return n/(100.0-0.0)
+
+def mult(n, m): # either define function in the same file OR in a separate file and import eg: see rank() function above
+    return n*m
+
+#expr = "dept_id == 'CS1' and student_count > 75 "
+#d = {'dept_id': 'CS1' ,'student_count': 95 }
+#eval(s, d)
+#True
+#>>> d = {'dept_id': 'CS1' ,'student_count': 35 }
+#>>> eval(s, d)
+#False
+
+n=10
+m=2
+expr = "mult(rank(n), m)"
+dict = {'rank': rank ,'mult': mult }
+
+result = eval(expr)
+#eval(expr, dict)
+print(result)
+
+
+===========//////////
+
+//==============
+
+  quantstats : 
+
+  qs.plots.snapshot(stock, title='PnL Performance', show=True)
+
+ stock : 
+<class 'pandas.core.series.Series'>
+
+
+Date
+2022-09-02   -0.00650
+2022-09-06   -0.01258
+2022-09-07    0.04119
+2022-09-08    0.00484
+2022-09-09    0.00319
+Name: PnL, dtype: float64
+
+stock.index = DatetimeIndex(['2010-01-04', '2010-01-05', '2010-01-06', '2010-01-07',
+               '2010-01-08', '2010-01-11', '2010-01-12', '2010-01-13',
+               '2010-01-14', '2010-01-15',
+               ...
+               '2022-08-26', '2022-08-29', '2022-08-30', '2022-08-31',
+               '2022-09-01', '2022-09-02', '2022-09-06', '2022-09-07',
+               '2022-09-08', '2022-09-09'],
+              dtype='datetime64[ns]', name='Date', length=3168, freq=None)
+============ //
+
+
+  
+
+  
+  
+
+
+  
 def ts_arg_max(df, n_days):
     """
     Calculates the number of days since the maximum value in a rolling window of n_days for each column in a DataFrame.
