@@ -48,6 +48,8 @@ for div in divs:
 with open('path/to/your/file.html', 'r') as file:
     html_content = file.read()
 
+
+
   
   
 //// USING eval :
@@ -83,6 +85,48 @@ print(result)
 
 ===========//////////
 
+
+//// =================
+
+generate random expression :
+  
+# funtion: [type of function, type of output]
+function_type = {'normalize':['scaled values','scaled'], 'neutralize':['standardize data','standard'], 'row_rank':['scaled values','scaled'],'ts_rank':['outlier reduction','ranked'],
+         'ts_max':['basedata','float'], 'ts_arg_max':['date','date values'],'group_neut':['standardize data','standard'], 'group_rank':['outlier reduction','ranked'], 'bucket_rank': ['outlier reduction','ranked']}
+# data: type of data
+data_type = {'cp.head()':'basedata ,float','technical_indicator.head()': 'basedata ,float','sector.head()': 'basedata ,string'}
+
+import random
+
+functions = ['ts_rank','row_rank','normalize','group_rank', 'bucket_rank']
+data = ['cp.head()','technical_indicator.head()']
+
+# Number of expressions to generate
+num_expressions = 20
+
+# Generate random formula expressions and their types
+
+
+def generate_expression(alpha_type):
+    if random.random() < 0.8:  # 80% chance to generate a function
+        function = random.choice(functions)
+        inner_expression, alpha_type = generate_expression(alpha_type)
+        alpha_type[0] = function_type[function][1]
+        return f"{function}({inner_expression})" , alpha_type 
+    else:
+        data_placeholder = random.choice(data)
+        alpha_type[1] = data_type[data_placeholder]
+        return data_placeholder, alpha_type 
+
+expressions = [generate_expression(['type','type']) for _ in range(num_expressions)]
+
+# Print the generated expressions
+for expression in expressions:
+    print(expression)
+  
+  
+=====================///
+  
 //==============
 
   quantstats : 
