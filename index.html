@@ -21,20 +21,35 @@
 
 <!-- #region 
 
+try:
+    response = requests.get(url)
+    # ... process the response ...
+except requests.exceptions.RequestException as e:
+    print(f"An error occurred: {e}")
+  
+pip install beautifulsoup4 requests
+import requests
 
-'''
-NOTE :
-How to Decide the Inputs : 
-Initial State: Often set to the first observation in the time series.
-Observation Covariance: Can be estimated as the variance of the changes in stock price. Smaller values make the filter more sensitive to changes.
-Transition Covariance: Usually a small value to indicate that stock prices don't change drastically in a short time. Larger values will make the filter smoother.
+url = 'YOUR_URL'  # Replace with your URL
+response = requests.get(url)
 
-Observations:
-Sensitivity to Observation Covariance (SMALLER VALUE MAKE DECAY FASTER): A smaller value of Observation Covariance (e.g., 0.5) makes the Kalman Filter more sensitive to price changes, resulting in a line that more closely follows the original data.
-Sensitivity to Transition Covariance (SMALLER VALUE MAY DECAY SMOOTHER): A larger value of Transition Covariance (e.g., 0.2) makes the Kalman Filter smoother, resulting in a line that is less sensitive to price changes.
-Trade-offs: There is a trade-off between responsiveness and smoothness, governed by these parameters. High sensitivity might capture more legitimate fluctuations but can also capture noise. A smoother line might miss quick, legitimate fluctuations.
+html_content = response.text
 
-'''
+from bs4 import BeautifulSoup
+
+soup = BeautifulSoup(html_content, 'html.parser')
+
+target_class = 'YOUR_TARGET_CLASS'  # Replace with your target class
+divs = soup.find_all('div', class_=target_class)
+
+for div in divs:
+    print(div.get_text())
+
+with open('path/to/your/file.html', 'r') as file:
+    html_content = file.read()
+
+  
+  
 //// USING eval :
 
   # https://stackoverflow.com/questions/33646365/python-programming-how-to-eval-values-from-dictionary
