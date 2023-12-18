@@ -67,7 +67,9 @@ def get_content(variable_name):
 
 def assign_variables(expr):
     # Find all occurrences of words followed by an opening parenthesis
-    variables = re.findall(r'\b\w+(?=\()', expr)
+    #variables = re.findall(r'\b\w+(?=\()', expr)
+    variables = re.findall(r'\b[A-Z][A-Z_\d]*\b', expr) # starts with upper case ltter, can have underscores, upper case letters and digits
+
     for var in variables:
         # Dynamically assign the variable using its name
         globals()[var] = get_content(var)
