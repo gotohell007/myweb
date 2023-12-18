@@ -58,6 +58,29 @@ parse_and_write('expression.txt')
 file_exists = os.path.exists(os.path.join('folder_path', 'filename.DONE'))
 
 
+import re
+
+def get_content(variable_name):
+    # Your existing function to get content based on the variable name
+    # For demonstration, let's just return a dummy value
+    return [1, 2, 3, 4, 5]  # Replace with your actual content retrieval logic
+
+def assign_variables(expr):
+    # Find all occurrences of words followed by an opening parenthesis
+    variables = re.findall(r'\b\w+(?=\()', expr)
+    for var in variables:
+        # Dynamically assign the variable using its name
+        globals()[var] = get_content(var)
+
+def evaluate_expression(expr):
+    assign_variables(expr)
+    return eval(expr)
+
+# Example Usage
+expr = 'delta(TMSRX_CLOSE, 5)'
+result = evaluate_expression(expr)
+print(result)
+
   
   
 //// USING eval :
