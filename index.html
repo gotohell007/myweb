@@ -21,33 +21,38 @@
 
 <!-- #region 
 
-try:
-    response = requests.get(url)
-    # ... process the response ...
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
-  
-pip install beautifulsoup4 requests
-import requests
+import os
 
-url = 'YOUR_URL'  # Replace with your URL
-response = requests.get(url)
+def parse_and_write(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
 
-html_content = response.text
+    current_folder = None
 
-from bs4 import BeautifulSoup
+    for line in lines:
+        line = line.strip()
+        if not line:  # Skip empty lines
+            continue
 
-soup = BeautifulSoup(html_content, 'html.parser')
+        # Check if the line is a header
+        if line.startswith('IDEA:'):
+            current_folder = line.split(':')[1]
+            if not os.path.exists(current_folder):
+                os.makedirs(current_folder)
+        else:
+            # Split the expression name and expression
+            parts = line.split(',', 1)
+            if len(parts) == 2:
+                expression_name, expression = parts
+                subfolder_path = os.path.join(current_folder, expression_name.strip())
+                if not os.path.exists(subfolder_path):
+                    os.makedirs(subfolder_path)
 
-target_class = 'YOUR_TARGET_CLASS'  # Replace with your target class
-divs = soup.find_all('div', class_=target_class)
+                with open(os.path.join(subfolder_path, 'data.txt'), 'w') as data_file:
+                    data_file.write(expression.strip())
 
-for div in divs:
-    print(div.get_text())
-
-with open('path/to/your/file.html', 'r') as file:
-    html_content = file.read()
-
+# Usage
+parse_and_write('expression.txt')
 
 
   
