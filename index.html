@@ -20,6 +20,31 @@
 </p>
 
 <!-- #region 
+
+## OPTIMIZE MEMORY 
+python -m memory_profiler sample_script.py
+pip install memory_profiler
+
+from memory_profiler import profile
+
+class Signal:
+    @profile
+    def on_signal(self, ...):
+        # method implementation
+
+    @profile
+    def on_starting(self, ...):
+        # method implementation
+
+  ## OPTIMIZE SPEED
+python -m cProfile sample_script.py
+
+import cProfile
+# Assuming run_backtest is your backtesting function
+cProfile.run('run_backtest()', 'profiling_output.prof')
+
+snakeviz profiling_output.prof
+
 ######OPTIMIZE #######
 
 
@@ -79,7 +104,56 @@ def optimize_portfolio(df_pos, df_group, initial_guess=None):
 # initial_guess = np.zeros(len(df_pos))  # or some other initial guess (last day's values)
 # optimized_positions = optimize_portfolio(df_pos, df_group, initial_guess)
 
+## add barra exposure condition :
 
+Normalize Factor Loadings: Normalize the factor loadings for each stock. This can be done by dividing each factor loading by the sum of the absolute values of the loadings for that factor across all stocks. This normalization ensures that the constraint considers the relative importance of each stock's exposure to a factor.
+
+def optimize_portfolio(df_pos, df_group, df_factors, initial_guess=None):
+    """
+    [Existing docstring]
+
+    Modified to include normalized factor loading constraints.
+    """
+    
+    # [Existing checks and setup code]
+
+    # Normalize factor loadings
+    factor_loading_sums = df_factors.abs().sum()
+    normalized_factors = df_factors.divide(factor_loading_sums, axis=1)
+    
+    # Constraint: Limiting factor exposures with normalized factor loadings
+    F = normalized_factors.values  # Normalized factor loading matrix
+    total_abs_sum = cp.sum(cp.abs(x))
+
+    for j in range(F.shape[1]):  # Loop over each factor
+        factor_exposure = cp.sum(cp.multiply(F[:, j], x))
+        constraints += [cp.abs(factor_exposure) <= 0.01 * total_abs_sum]
+
+    # [Rest of your existing code to set up and solve the optimization problem]
+
+    return pd.Series(x.value, index=df_pos.index)
+
+  
+
+
+  
+# visualize the optimized positions :
+
+import matplotlib.pyplot as plt
+
+# Assuming you have run the optimization and have `df_pos` and `optimized_positions`
+plt.figure(figsize=(12, 6))
+plt.plot(df_pos, label='Initial Positions', marker='o')
+plt.plot(optimized_positions, label='Optimized Positions', marker='x')
+plt.title('Portfolio Optimization Comparison')
+plt.xlabel('Stocks')
+plt.ylabel('Positions')
+plt.xticks(rotation=45)
+plt.legend()
+plt.show()
+
+Plot pnl vs position size on the day and its industry and industry pnl on that day , across various groups ??
+  
 #######################
 
   
