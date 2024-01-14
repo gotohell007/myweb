@@ -20,7 +20,219 @@
 </p>
 
 <!-- #region 
+######OPTIMIZE #######
 
+  import cvxpy as cp
+import numpy as np
+import pandas as pd
+
+def optimize_portfolio(df_pos, df_group):
+    """
+    Optimize the portfolio positions.
+
+    Args:
+    df_pos (pd.Series): Initial positions of various stocks.
+    df_group (pd.Series): Industry numbers for the stocks.
+
+    Returns:
+    pd.Series: Optimized positions in the same format as df_pos.
+    """
+
+    if not isinstance(df_pos, pd.Series) or not isinstance(df_group, pd.Series):
+        raise ValueError("df_pos and df_group must be pandas Series")
+    if not df_pos.index.equals(df_group.index):
+        raise ValueError("Indices of df_pos and df_group must match")
+
+    n = len(df_pos)
+    groups = df_group.unique()
+
+    x = cp.Variable(n)
+    objective = cp.Minimize(cp.sum_squares(x - df_pos.values))
+
+    constraints = [cp.sum(x) == 0]
+
+    total_abs_sum = cp.sum(cp.abs(x))
+    constraints += [x >= -0.01 * total_abs_sum, x <= 0.01 * total_abs_sum]
+
+    for g in groups:
+        group_indices = df_pos.index[df_group == g]
+        constraints += [cp.sum(x[group_indices]) <= 0.02 * total_abs_sum, 
+                        cp.sum(x[group_indices]) >= -0.02 * total_abs_sum]
+
+    prob = cp.Problem(objective, constraints)
+    prob.solve()
+
+    optimized_positions = pd.Series(x.value, index=df_pos.index)
+    return optimized_positions
+
+# Example usage:
+# optimized_positions = optimize_portfolio(df_pos, df_group)
+
+
+#######################
+
+  
+
+import numpy as np
+
+def gram_schmidt_orthogonalize(alpha, pca_matrix):
+    """
+    Orthogonalize a given vector 'alpha' using the Gram-Schmidt process against a set of vectors (PCA matrix).
+    
+    Parameters:
+    - alpha (numpy.array): The vector to be orthogonalized
+    - pca_matrix (numpy.array): The matrix containing the vectors to orthogonalize against (PCA components)
+    
+    Returns:
+    - numpy.array: The orthogonalized vector
+    """
+    
+    # Initialize the orthogonalized vector as the original alpha
+    orthogonalized_alpha = np.array(alpha, dtype=float)
+    
+    # Iterate through each vector in the PCA matrix to orthogonalize
+    for i in range(pca_matrix.shape[1]):
+        pca_vector = pca_matrix[:, i]
+        
+        # Compute the projection of alpha onto the PCA vector
+        projection = np.dot(alpha, pca_vector) / np.dot(pca_vector, pca_vector)
+        
+        # Subtract the projection from the orthogonalized vector
+        orthogonalized_alpha -= projection * pca_vector
+    
+    return orthogonalized_alpha
+
+# Test the function with a sample alpha vector (replace this with your actual alpha)
+sample_alpha = np.random.rand(pca_result.shape[0])
+
+# Orthogonalize the sample alpha vector against the PCA components
+orthogonalized_alpha = gram_schmidt_orthogonalize(sample_alpha, pca_result)
+
+
+
+2. -> 
+# OPTIMIZE FRAMEWORK
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import minimize
+
+def optimizer(func_to_optimize, initial_guess, bounds):
+    evaluated_values = []  # Stores evaluated function values for plotting
+    
+    def evaluate(params):
+        
+        ## use the below to step paramater values ie 0:2:20 
+        #params[0] = round(params[0] / 2) * 2  # Round to nearest multiple of 2, use this tactic, if you want to run parameter 1 at a step of 2 ie bounds=(0,20) and with this line, it will be 0,2,4,...20
+        #params[0] = round(params[0] / 0.5) * 0.5  # Round to nearest multiple of 0.5, this is same as above but will have step of 0.5, so bounds=(0,20) will be 0,0.5,1,1.5,...10
+
+        # for categorical params, use dictionary
+        #string_options = ["sector", "industry", "subindustry"]
+        #params[0] = string_options[int(round(params[0]))]  # Round to nearest integer and map to string value
+        
+        value = -func_to_optimize(*params)
+        evaluated_values.append(value)
+        
+        return value
+    
+    result = minimize(evaluate, initial_guess, bounds=bounds)
+    
+    if result.success:
+        optimal_params = result.x
+        max_value = -result.fun
+    else:
+        optimal_params = None
+        max_value = None
+        print("Optimization failed:", result.message)
+    
+    # Real-time plotting
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.plot(evaluated_values, marker='o')
+    plt.xlabel('Iteration')
+    plt.ylabel('Function Value')
+    plt.title('Function Value by Iteration')
+    
+    # Parameter-wise plotting
+    for i, bound in enumerate(bounds):
+        param_values = np.linspace(bound[0], bound[1], 20)
+        func_values = []
+        
+        for val in param_values:
+            temp_params = optimal_params.copy()
+            temp_params[i] = val
+            func_values.append(-evaluate(temp_params))
+        
+        plt.subplot(1, 2, 2)
+        plt.plot(param_values, func_values, marker='o', label=f'Param {i+1}')
+        
+    plt.xlabel('Parameter Value')
+    plt.ylabel('Function Value')
+    plt.title('Function Value by Parameter values (keeping other parameter at their optimized values)')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+    
+    return optimal_params, max_value
+
+# Example usage
+if __name__ == "__main__":
+    
+    # CHANGE THIS FUNCTION
+    def example_function(x, y, z):
+        return -((x-1)**2 + (y+2)**2 + z) 
+    
+    initial_guess = [0, 0, 0]
+    # bounds = [(0, len(string_options) - 1)]  # Parameter bounds: index is between 0 and len(string_options) - 1 ; USE this when using categorical params string_options
+    bounds = [(-3, 3), (-3, 3), (-5,5)]
+    
+    '''
+    bounds_x = np.arange(0, 21, 2)  # Use np.arange to create an array from 0 to 20 with step 2
+    bounds_y = np.arange(0, 11, 0.5)  # Use np.arange to create an array from 0 to 10 with step 0.5
+    string_options = ["sector", "industry", "subindustry"] # categorical variables
+    bounds_category = (0, len(string_options) - 1)  # Parameter bounds: index is between 0 and len(string_options) - 1
+    bounds = [bounds_x, bounds_y, bounds_category]
+    '''
+    
+    optimal_params, max_value = optimizer(example_function, initial_guess, bounds)
+    print("Optimal parameters:", optimal_params)
+    print("Maximum value:", max_value)
+
+
+3. ->
+
+# Function to plot returns distribution with respect to adv_ratio_d1
+def plot_returns_vs_feature(returns, feature, num_buckets=10):
+    # Stack both dataframes for easier manipulation
+    stacked_returns = returns.stack().reset_index().rename(columns={0: 'Returns', 'level_1': 'Stock'})
+    stacked_feature = feature.stack().reset_index().rename(columns={0: 'Feature', 'level_1': 'Stock'})
+
+    # Remove instances where returns are zero
+    stacked_returns = stacked_returns[stacked_returns['Returns'] != 0]
+    
+    # Merge them together
+    merged_data = pd.merge(stacked_returns, stacked_feature, on=['level_0', 'Stock'])
+    
+    # Create adv_ratio buckets
+    merged_data['Feature_Bucket'] = pd.qcut(merged_data['Feature'], q=num_buckets, labels=[f'Bucket_{i+1}' for i in range(num_buckets)])
+
+    # Calculate statistics for each bucket
+    bucket_stats = merged_data.groupby('Feature_Bucket')['Returns'].agg(['mean', 'min', 'max']).reset_index()
+    
+    # Plotting
+    plt.figure(figsize=(12, 6))
+    plt.plot(bucket_stats['Feature_Bucket'], bucket_stats['mean'], marker='o', label='Mean Returns')
+    plt.plot(bucket_stats['Feature_Bucket'], bucket_stats['min'], marker='x', label='Min Returns')
+    plt.plot(bucket_stats['Feature_Bucket'], bucket_stats['max'], marker='s', label='Max Returns')
+    plt.xlabel('Feature_Buckets')
+    plt.ylabel('Returns')
+    plt.title('Returns vs Feature')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+=========
+
+  
 import os
 
 def parse_and_write(file_path):
