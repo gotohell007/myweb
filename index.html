@@ -22,17 +22,20 @@
 <!-- #region 
 ######OPTIMIZE #######
 
+
+
   import cvxpy as cp
 import numpy as np
 import pandas as pd
 
-def optimize_portfolio(df_pos, df_group):
+def optimize_portfolio(df_pos, df_group, initial_guess=None):
     """
-    Optimize the portfolio positions.
+    Optimize the portfolio positions with an option for warm start.
 
     Args:
     df_pos (pd.Series): Initial positions of various stocks.
     df_group (pd.Series): Industry numbers for the stocks.
+    initial_guess (np.array, optional): Initial guess for the solution.
 
     Returns:
     pd.Series: Optimized positions in the same format as df_pos.
@@ -50,7 +53,6 @@ def optimize_portfolio(df_pos, df_group):
     objective = cp.Minimize(cp.sum_squares(x - df_pos.values))
 
     constraints = [cp.sum(x) == 0]
-
     total_abs_sum = cp.sum(cp.abs(x))
     constraints += [x >= -0.01 * total_abs_sum, x <= 0.01 * total_abs_sum]
 
@@ -60,13 +62,22 @@ def optimize_portfolio(df_pos, df_group):
                         cp.sum(x[group_indices]) >= -0.02 * total_abs_sum]
 
     prob = cp.Problem(objective, constraints)
-    prob.solve()
+
+    # Warm start
+    if initial_guess is not None:
+        if len(initial_guess) != n:
+            raise ValueError("Initial guess must have the same length as df_pos")
+        x.value = initial_guess
+
+    # Solve the problem using the OSQP solver
+    prob.solve(solver=cp.OSQP) # ECOS/SCS/OSQP
 
     optimized_positions = pd.Series(x.value, index=df_pos.index)
     return optimized_positions
 
 # Example usage:
-# optimized_positions = optimize_portfolio(df_pos, df_group)
+# initial_guess = np.zeros(len(df_pos))  # or some other initial guess (last day's values)
+# optimized_positions = optimize_portfolio(df_pos, df_group, initial_guess)
 
 
 #######################
