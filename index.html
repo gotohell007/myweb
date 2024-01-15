@@ -53,6 +53,15 @@ snakeviz profiling_output.prof
 import numpy as np
 import pandas as pd
 
+  
+    # Revised group constraints
+    for g in groups:
+        group_mask = (df_group == g).astype(float).values  # Create a mask for each group
+        group_sum = cp.sum(cp.multiply(x, group_mask))  # Elementwise multiplication
+        constraints += [group_sum <= 0.02 * total_abs_sum, 
+                        group_sum >= -0.02 * total_abs_sum]
+
+  
 def optimize_portfolio(df_pos, df_group, initial_guess=None):
     """
     Optimize the portfolio positions with an option for warm start.
