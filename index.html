@@ -21,6 +21,33 @@
 
 <!-- #region 
 
+
+  EVENT SIGNAL :
+import pandas as pd
+
+# Assuming 'close' is your DataFrame with stocks along columns and dates as rows
+
+
+  # Convert data to float32 for efficiency
+close = close.astype('float32')
+  
+# 1. Calculate daily returns
+daily_returns = close.pct_change()
+
+# 2. Rolling window to find the day of highest return in the past 20 days
+rolling_max = daily_returns.rolling(window=20).idxmax()
+
+# 3. Calculate the number of days since the day of highest return
+current_date = close.index[-1]  # Assuming you want the signal for the current date
+days_since_max = (current_date - rolling_max).dt.days
+
+# 4. Compute the signal
+signal = rolling_max.apply(lambda x: x.day) / (1 + days_since_max)
+
+# 'signal' now contains the computed signals for each stock
+
+
+
 ## OPTIMIZE MEMORY 
 python -m memory_profiler sample_script.py
 pip install memory_profiler
@@ -48,6 +75,31 @@ snakeviz profiling_output.prof
 ######OPTIMIZE #######
 
 
+CREATE SAMPLE DATA for optimize_position :
+import pandas as pd
+import numpy as np
+
+# Set a seed for reproducibility
+np.random.seed(0)
+
+# Sample data for df_pos (positions of stocks)
+# Assuming these are normalized positions (summing to 1 for simplicity, but they can be any values)
+df_pos = pd.Series(np.random.rand(10), name='Position')
+
+# Sample data for df_group (industry numbers for the stocks)
+# Let's assume 4 different industries, denoted by numbers 1 to 4
+df_group = pd.Series(np.random.randint(1, 5, 10), name='Industry')
+
+# Set stock names as index (for example, Stock1, Stock2, ..., Stock10)
+df_pos.index = [f'Stock{i+1}' for i in range(10)]
+df_group.index = df_pos.index
+
+# Display the generated data
+print("Positions (df_pos):")
+print(df_pos)
+print("\nIndustry Numbers (df_group):")
+print(df_group)
+  
 
   import cvxpy as cp
 import numpy as np
